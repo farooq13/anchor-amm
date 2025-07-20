@@ -5,6 +5,7 @@ use crate::state::Config;
 
 
 #[derive(Accounts)]
+#[instruction(seed: u64)]
 pub struct Initialize<'info> {
   #[account(mut)]
   pub initializer: Signer<'info>,
@@ -65,7 +66,7 @@ impl<'info> Initialize<'info> {
       config_bump: bumps.config,
       lp: bumps.mint_lp,
     });
-    
+
     Ok(())
   } 
 }
