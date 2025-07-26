@@ -87,5 +87,56 @@ impl<'info> Swap<'info> {
     self.withdraw_tokens(is_x, res.withdraw)?;
 
     Ok(())
+
+    
+  }
+
+  pub fn deposit_tokens(&mut self, is_x: bool, amount: u64) -> Result<()> {
+    let (from, to) = match is_x {
+      true => (self.user_x.to_account_info(), self.vault_x.to_account_info()),
+      false => (self.user_y.to_account_info(), self.vault_y.to_account_info()), 
+
+    };
+
+      let cpi_program = self.token_program.to_account_info();
+
+      let accounts = Transfer {
+        from: from.to_account_info(),
+        to: to.to_account_info(),
+        authority: self.user.to_account_info(),
+      };
+
+      let cpi_context = CpiContext::new(cpi_program, accounts);
+
+      transfer(cpi_context, amount)?;
+
+      Ok(())
+  }
+
+  pub fn withdraw_tokens(&mut self, is_x: bool, amount: u64) -> Result<()> {
+    let (from, to) = match is_x {
+      true => (self.vault_y.to_account_info(), self.user_y.to_account_info()),
+      false => (self.vault_x.to_account_info(), self.user_x.to_account_info()),
+    };
+
+    let cpi_program = self.token_program.to_account_info();
+
+    let accounts = Transfer {
+      from: from.to_account_info(),
+      to: to.to_account_info(),
+      authority: self.config.to_account_info(),
+    };
+
+    let seeds = &[
+      &b"config"[..],
+      &self.config.seed.to_le_bytes(),
+      &[self.config.config_bump],
+    ];
+
+    let signer_seeds = &[&seeds[..]];
+
+    let cpi_context = CpiContext::new_with_signer(cpi_program, accounts, signer_seeds);
+
+    transfer(cpi_context, amount)?;
   }
 }
